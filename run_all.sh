@@ -2,12 +2,12 @@
 
 # Run VDPO on multiple MuJoCo v5 environments
 # Environments: HalfCheetah-v5, Hopper-v5, Ant-v5, Walker2d-v5
-# Delays: 0, 4, 8, 12, 16, 20
+# Delays: 4, 8, 16
 # Seeds: 0, 1, 2 (3 seeds)
 # Total timesteps: 5M per run
 
 ENVS=("HalfCheetah-v5" "Hopper-v5" "Ant-v5" "Walker2d-v5")
-DELAYS=(0 4 8 12 16 20)
+DELAYS=(4 8 16)
 SEEDS=(0 1 2)
 TOTAL_TIMESTEPS=5000000
 
