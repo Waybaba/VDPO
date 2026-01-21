@@ -16,13 +16,23 @@
 #SBATCH --output=output/slurm_logs/%x/%A/%a.out
 #SBATCH --error=output/slurm_logs/%x/%A/%a.err
 
+### Set environment variables
+export PYTHONUNBUFFERED=1
+
+### VARIABLES
+CONDA_ENV="VDPO"
 ENVS=("HalfCheetah-v5" "Hopper-v5" "Ant-v5" "Walker2d-v5")
 DELAYS=(0 4 8 12 16 20)
 SEEDS=(0 1 2)
 TOTAL_TIMESTEPS=5000000
 
-# Calculate indices from SLURM array task ID
+# Calculate indices from task ID
+# Total combinations: 4 * 6 * 3 = 72
 # Loop order: env (outermost) -> delay -> seed (innermost)
+# env_idx = task_id / (6 * 3) = task_id / 18
+# delay_idx = (task_id % 18) / 3
+# seed_idx = task_id % 3
+
 TASK_ID=$SLURM_ARRAY_TASK_ID
 NUM_DELAYS=${#DELAYS[@]}
 NUM_SEEDS=${#SEEDS[@]}
@@ -31,9 +41,22 @@ ENV_IDX=$((TASK_ID / (NUM_DELAYS * NUM_SEEDS)))
 DELAY_IDX=$(((TASK_ID % (NUM_DELAYS * NUM_SEEDS)) / NUM_SEEDS))
 SEED_IDX=$((TASK_ID % NUM_SEEDS))
 
+# Get parameter values
 ENV=${ENVS[$ENV_IDX]}
 DELAY=${DELAYS[$DELAY_IDX]}
 SEED=${SEEDS[$SEED_IDX]}
 
-echo "Running ${ENV} delay=${DELAY} seed=${SEED} (Task ID: ${TASK_ID})"
+### RUN
+source ~/.bashrc
+conda activate ${CONDA_ENV}
+
+echo "Starting VDPO training - Grid search"
+echo "Array Task ID: $SLURM_ARRAY_TASK_ID"
+echo "Total Timesteps: $TOTAL_TIMESTEPS"
+echo "Parameters:"
+echo "  - env: $ENV (idx: $ENV_IDX)"
+echo "  - delay: $DELAY (idx: $DELAY_IDX)"
+echo "  - seed: $SEED (idx: $SEED_IDX)"
+echo ""
+
 python3 VDPO.py --env=${ENV} --delay=${DELAY} --total_timesteps=${TOTAL_TIMESTEPS} --seed=${SEED}
