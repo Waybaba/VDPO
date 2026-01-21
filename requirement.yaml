@@ -4,6 +4,6 @@ tensorboard
 tensorboardX
 tqdm
 rich
-gymnasium
+gymnasium[mujoco]
 matplotlib
 seaborn
