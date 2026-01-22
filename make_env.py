@@ -5,16 +5,6 @@ from collections import deque
 
 def make_mujoco_env(env_name, seed):
     env = gym.make(env_name)
-    
-    # Modify dt for HalfCheetah and Ant to match Hopper and Walker2d
-    # Original: HalfCheetah/Ant: dt=0.01, frame_skip=5 (actual_dt=0.05)
-    #          Hopper/Walker2d: dt=0.002, frame_skip=4 (actual_dt=0.008)
-    # Modified: All envs: dt=0.002, frame_skip=4 (actual_dt=0.008)
-    if "HalfCheetah" in env_name or "Ant" in env_name:
-        unwrapped = env.unwrapped
-        unwrapped.model.opt.timestep = 0.002
-        unwrapped.frame_skip = 4
-    
     env.action_space.seed(seed)
     env.observation_space.seed(seed)
     return env
@@ -51,8 +41,7 @@ class ConstantObservationDelay(gym.Wrapper):
         )
 
 def make_delayed_mujoco_env(env_name, seed, delay):
-    # Use make_mujoco_env to ensure dt modifications are applied
-    env = make_mujoco_env(env_name, seed)
+    env = gym.make(env_name)
     env = ConstantObservationDelay(env, delay)
     env.action_space.seed(seed)
     env.observation_space.seed(seed)
