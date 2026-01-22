@@ -7,7 +7,7 @@
 # Total combinations: 4 * 3 * 3 = 36
 
 #SBATCH --job-name=g1-pickup-grid-search
-#SBATCH --array=0-35%8
+#SBATCH --array=0-35
 #SBATCH --gres=gpu:1
 #SBATCH --exclude=al-l40s-0.grasp.maas
 #SBATCH --cpus-per-task=16

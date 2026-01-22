@@ -62,22 +62,8 @@ def extract_results_from_logs():
     # Storage: results[(env, delay, seed)] = value
     results = {}
     
-    # Method 1: Parse tensorboard logs from logs/VDPO/
-    print("Parsing tensorboard logs...")
-    logs_dir = Path("logs/VDPO")
-    if logs_dir.exists():
-        for env in ENVS:
-            for delay in DELAYS:
-                for seed in SEEDS:
-                    log_dir = logs_dir / f"ENV_{env}_DELAYS_{delay}_SEED_{seed}"
-                    if log_dir.exists():
-                        value = parse_tensorboard_log(str(log_dir))
-                        if value is not None:
-                            results[(env, delay, seed)] = value
-                            print(f"  Found: {env} delay={delay} seed={seed}: {value:.2f}")
-    
-    # Method 2: Parse output logs from SLURM logs
-    print("\nParsing SLURM output logs...")
+    # Method 1: Parse output logs from SLURM logs (FAST - preferred method)
+    print("Parsing SLURM output logs (fast method)...")
     slurm_logs_dir = Path("output/slurm_logs/g1-pickup-grid-search")
     if slurm_logs_dir.exists():
         for job_dir in slurm_logs_dir.iterdir():
@@ -101,8 +87,27 @@ def extract_results_from_logs():
                             delay = DELAYS[delay_idx]
                             seed = SEEDS[seed_idx]
                             
-                            # Only store if not already found from tensorboard
-                            if (env, delay, seed) not in results:
+                            results[(env, delay, seed)] = value
+                            print(f"  Found: {env} delay={delay} seed={seed}: {value:.2f}")
+    
+    # Method 2: Parse tensorboard logs from logs/VDPO/ (SLOW - only for missing results)
+    # Only use tensorboard if output logs are missing
+    missing_count = len(ENVS) * len(DELAYS) * len(SEEDS) - len(results)
+    if missing_count > 0 and EventAccumulator is not None:
+        print(f"\nParsing tensorboard logs for {missing_count} missing results (slow method)...")
+        logs_dir = Path("logs/VDPO")
+        if logs_dir.exists():
+            for env in ENVS:
+                for delay in DELAYS:
+                    for seed in SEEDS:
+                        # Skip if already found
+                        if (env, delay, seed) in results:
+                            continue
+                        
+                        log_dir = logs_dir / f"ENV_{env}_DELAYS_{delay}_SEED_{seed}"
+                        if log_dir.exists():
+                            value = parse_tensorboard_log(str(log_dir))
+                            if value is not None:
                                 results[(env, delay, seed)] = value
                                 print(f"  Found: {env} delay={delay} seed={seed}: {value:.2f}")
     
