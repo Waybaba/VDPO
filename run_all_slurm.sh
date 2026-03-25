@@ -2,12 +2,12 @@
 # SLURM training script for VDPO - Grid search over all parameters
 # Parameters (loop order: env -> delay -> seed):
 #   - env: HalfCheetah-v5, Hopper-v5, Ant-v5, Walker2d-v5 (4 values) - outermost loop
-#   - delay: 4, 8, 16 (3 values)
-#   - seed: 0, 1, 2 (3 values) - innermost loop
-# Total combinations: 4 * 3 * 3 = 36
+#   - delay: 5, 25, 50 (3 values)
+#   - seed: 0 (1 value) - innermost loop
+# Total combinations: 4 * 3 * 1 = 12
 
 #SBATCH --job-name=g1-pickup-grid-search
-#SBATCH --array=0-35
+#SBATCH --array=0-11
 #SBATCH --gres=gpu:1
 #SBATCH --exclude=al-l40s-0.grasp.maas
 #SBATCH --cpus-per-task=16
@@ -22,16 +22,16 @@ export PYTHONUNBUFFERED=1
 ### VARIABLES
 CONDA_ENV="VDPO"
 ENVS=("HalfCheetah-v5" "Hopper-v5" "Ant-v5" "Walker2d-v5")
-DELAYS=(4 8 16)
-SEEDS=(0 1 2)
+DELAYS=(5 25 50)
+SEEDS=(0)
 TOTAL_TIMESTEPS=5000000
 
 # Calculate indices from task ID
-# Total combinations: 4 * 3 * 3 = 36
+# Total combinations: 4 * 3 * 1 = 12
 # Loop order: env (outermost) -> delay -> seed (innermost)
-# env_idx = task_id / (3 * 3) = task_id / 9
-# delay_idx = (task_id % 9) / 3
-# seed_idx = task_id % 3
+# env_idx = task_id / (3 * 1) = task_id / 3
+# delay_idx = (task_id % 3) / 1
+# seed_idx = task_id % 1
 
 TASK_ID=$SLURM_ARRAY_TASK_ID
 NUM_DELAYS=${#DELAYS[@]}
