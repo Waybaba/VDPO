@@ -18,7 +18,7 @@ from nn import SAC_Actor, SAC_Critic
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--exp_name", type=str, default=os.path.basename(__file__).rstrip(".py"))
-parser.add_argument("--env", type=str, default="Hopper-v5")
+parser.add_argument("--env", type=str, default="Hopper-v4")
 parser.add_argument("--gamma", type=float, default=0.99)
 parser.add_argument("--device", default=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
 parser.add_argument("--seed", type=int, default=0)
