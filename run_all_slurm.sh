@@ -8,7 +8,7 @@
 # At most 3 array tasks run concurrently (%3)
 
 #SBATCH --job-name=g1-pickup-grid-search
-#SBATCH --array=0-35%3
+#SBATCH --array=0-35%12
 #SBATCH --gres=gpu:1
 #SBATCH --exclude=al-l40s-0.grasp.maas
 #SBATCH --cpus-per-task=16
