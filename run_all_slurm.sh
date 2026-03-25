@@ -25,7 +25,7 @@ CONDA_ENV="VDPO"
 ENVS=("HalfCheetah-v4" "Hopper-v4" "Ant-v4" "Walker2d-v4")
 DELAYS=(5 25 50)
 SEEDS=(0)
-TOTAL_TIMESTEPS=5000000
+TOTAL_TIMESTEPS=1000000
 
 # Calculate indices from task ID
 # Total combinations: 4 * 3 * 1 = 12
