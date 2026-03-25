@@ -5,14 +5,15 @@
 #   - delay: 5, 25, 50 (3 values)
 #   - seed: 0 (1 value) - innermost loop
 # Total combinations: 4 * 3 * 1 = 12
+# At most 3 array tasks run concurrently (%3)
 
 #SBATCH --job-name=g1-pickup-grid-search
-#SBATCH --array=0-11
+#SBATCH --array=0-11%3
 #SBATCH --gres=gpu:1
 #SBATCH --exclude=al-l40s-0.grasp.maas
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=64G
-#SBATCH --time=3-00:00:00
+#SBATCH --time=7-00:00:00
 #SBATCH --output=output/slurm_logs/%x/%A/%a.out
 #SBATCH --error=output/slurm_logs/%x/%A/%a.err
 
