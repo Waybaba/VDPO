@@ -1,0 +1,72 @@
+\begin{tabular}{llcccc}
+\toprule
+\multirow{2}{*}{Task} & \multirow{2}{*}{Method} & \multicolumn{4}{c}{Action Delay} \\
+\cmidrule(lr){3-6}
+ & & 0 (=SAC) & 4 & 8 & 16 \\
+\midrule
+
+\multirow{5}{*}{HalfCheetah-v5}
+& Vanilla SAC
+& $12450\!\pm\!695$ & $-109\!\pm\!15$ & $-129\!\pm\!18$ & $-121\!\pm\!11$ \\
+& DR-Critic
+& \multicolumn{1}{c}{\textemdash} & $4702\!\pm\!668$ & $2873\!\pm\!537$ & $1249\!\pm\!574$ \\
+& SA-MLP+DR-Critic
+& \multicolumn{1}{c}{\textemdash} & $8190\!\pm\!543$ & $4945\!\pm\!417$ & $4565\!\pm\!816$ \\
+& VDPO
+& \multicolumn{1}{c}{\textemdash} & \multicolumn{1}{c}{\textemdash} & \multicolumn{1}{c}{\textemdash} & $2085\!\pm\!332$ \\
+& SAID (Ours)
+& $\mathbf{14845\!\pm\!367}$ & $\mathbf{9648\!\pm\!436}$ & $\mathbf{5565\!\pm\!274}$ & $\mathbf{5289\!\pm\!432}$ \\
+\midrule
+
+\multirow{5}{*}{Ant-v5}
+& Vanilla SAC
+& $4553\!\pm\!2017$ & $1047\!\pm\!30$ & $982\!\pm\!13$ & $961\!\pm\!6$ \\
+& DR-Critic
+& \multicolumn{1}{c}{\textemdash} & $2241\!\pm\!249$ & $1662\!\pm\!107$ & $1282\!\pm\!123$ \\
+& SA-MLP+DR-Critic
+& \multicolumn{1}{c}{\textemdash} & $\mathbf{4716\!\pm\!1253}$ & $4512\!\pm\!521$ & $4118\!\pm\!62$ \\
+& VDPO
+& \multicolumn{1}{c}{\textemdash} & $5272\!\pm\!0$ & \multicolumn{1}{c}{\textemdash} & \multicolumn{1}{c}{\textemdash} \\
+& SAID (Ours)
+& $\mathbf{5953\!\pm\!84}$ & $4586\!\pm\!660$ & $\mathbf{4610\!\pm\!383}$ & $\mathbf{4137\!\pm\!41}$ \\
+\midrule
+
+\multirow{5}{*}{Hopper-v5}
+& Vanilla SAC
+& $2354\!\pm\!645$ & $188\!\pm\!65$ & $61\!\pm\!27$ & $50\!\pm\!27$ \\
+& DR-Critic
+& \multicolumn{1}{c}{\textemdash} & $65\!\pm\!58$ & $21\!\pm\!10$ & $34\!\pm\!21$ \\
+& SA-MLP+DR-Critic
+& \multicolumn{1}{c}{\textemdash} & $2405\!\pm\!610$ & $2002\!\pm\!556$ & $2171\!\pm\!372$ \\
+& VDPO
+& \multicolumn{1}{c}{\textemdash} & $1652\!\pm\!574$ & $36\!\pm\!0$ & $1851\!\pm\!0$ \\
+& SAID (Ours)
+& $\mathbf{3170\!\pm\!283}$ & $\mathbf{2698\!\pm\!305}$ & $\mathbf{2514\!\pm\!415}$ & $\mathbf{3268\!\pm\!237}$ \\
+\midrule
+
+\multirow{5}{*}{Walker2d-v5}
+& Vanilla SAC
+& $4910\!\pm\!501$ & $338\!\pm\!79$ & $185\!\pm\!98$ & $157\!\pm\!111$ \\
+& DR-Critic
+& \multicolumn{1}{c}{\textemdash} & $1979\!\pm\!868$ & $2050\!\pm\!587$ & $447\!\pm\!281$ \\
+& SA-MLP+DR-Critic
+& \multicolumn{1}{c}{\textemdash} & $\mathbf{4999\!\pm\!559}$ & $5102\!\pm\!468$ & $4827\!\pm\!320$ \\
+& VDPO
+& \multicolumn{1}{c}{\textemdash} & $1990\!\pm\!0$ & $5027\!\pm\!0$ & \multicolumn{1}{c}{\textemdash} \\
+& SAID (Ours)
+& $\mathbf{5158\!\pm\!360}$ & $4874\!\pm\!230$ & $\mathbf{5222\!\pm\!295}$ & $\mathbf{4913\!\pm\!175}$ \\
+\midrule
+
+\multirow{5}{*}{Task average}
+& Vanilla SAC
+& $6067\!\pm\!965$ & $366\!\pm\!47$ & $275\!\pm\!39$ & $262\!\pm\!39$ \\
+& DR-Critic
+& \multicolumn{1}{c}{\textemdash} & $2247\!\pm\!461$ & $1652\!\pm\!310$ & $753\!\pm\!250$ \\
+& SA-MLP+DR-Critic
+& \multicolumn{1}{c}{\textemdash} & $5078\!\pm\!741$ & $4140\!\pm\!491$ & $3920\!\pm\!393$ \\
+& VDPO
+& \multicolumn{1}{c}{\textemdash} & $2444\!\pm\!1488$ & $2531\!\pm\!2495$ & $2007\!\pm\!293$ \\
+& SAID (Ours)
+& $\mathbf{7282\!\pm\!274}$ & $\mathbf{5452\!\pm\!408}$ & $\mathbf{4478\!\pm\!342}$ & $\mathbf{4402\!\pm\!221}$ \\
+\bottomrule
+\end{tabular}

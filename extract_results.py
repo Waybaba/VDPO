@@ -15,7 +15,7 @@ except ImportError:
     print("Warning: tensorboard not available, will only parse output logs")
     EventAccumulator = None
 
-def parse_output_log(log_file):
+def parse_output_log(log_file, total_timesteps=5000000):
     """Parse output log to extract final evaluation results."""
     results = []
     with open(log_file, 'r') as f:
@@ -27,10 +27,13 @@ def parse_output_log(log_file):
                 value = float(match.group(2))
                 results.append((step, value))
     
-    # Return the last evaluation result
+    # Return the last evaluation result with completion status
     if results:
-        return results[-1][1]  # Return the value of the last evaluation
-    return None
+        last_step, last_value = results[-1]
+        # Consider completed if within 100k steps of total_timesteps
+        completed = last_step >= (total_timesteps - 100000)
+        return last_value, last_step, completed
+    return None, None, False
 
 def parse_tensorboard_log(log_dir):
     """Parse tensorboard log to extract final evaluation result."""
@@ -53,10 +56,11 @@ def parse_tensorboard_log(log_dir):
 
 def extract_results_from_logs():
     """Extract all results from log directories."""
-    # Configuration
-    ENVS = ["HalfCheetah-v5", "Hopper-v5", "Ant-v5", "Walker2d-v5"]
-    DELAYS = [4, 8, 16]  # Note: 0 is not in the current setup
-    SEEDS = [0, 1, 2]
+    # Configuration — keep in sync with the batch script you use:
+    # run_all_slurm.sh: delays 5,25,50 and seed 0; for run_all.sh use DELAYS=[4,8,16], SEEDS=[0,1,2].
+    ENVS = ["HalfCheetah-v4", "Hopper-v4", "Ant-v4", "Walker2d-v4"]
+    DELAYS = [5, 25, 50]
+    SEEDS = [0]
     METHOD = "VDPO"  # Single method
     
     # Storage: results[(env, delay, seed)] = value
@@ -64,13 +68,14 @@ def extract_results_from_logs():
     
     # Method 1: Parse output logs from SLURM logs (FAST - preferred method)
     print("Parsing SLURM output logs (fast method)...")
+    TOTAL_TIMESTEPS = 5000000
     slurm_logs_dir = Path("output/slurm_logs/g1-pickup-grid-search")
     if slurm_logs_dir.exists():
         for job_dir in slurm_logs_dir.iterdir():
             if job_dir.is_dir():
                 for log_file in job_dir.glob("*.out"):
                     task_id = log_file.stem
-                    value = parse_output_log(log_file)
+                    value, step, completed = parse_output_log(log_file, TOTAL_TIMESTEPS)
                     if value is not None:
                         # Need to reverse engineer (env, delay, seed) from task_id
                         # This matches the calculation in run_all_slurm.sh
@@ -87,8 +92,13 @@ def extract_results_from_logs():
                             delay = DELAYS[delay_idx]
                             seed = SEEDS[seed_idx]
                             
-                            results[(env, delay, seed)] = value
-                            print(f"  Found: {env} delay={delay} seed={seed}: {value:.2f}")
+                            results[(env, delay, seed)] = {
+                                'value': value,
+                                'step': step,
+                                'completed': completed
+                            }
+                            status = "✓" if completed else f"✗ ({step:,})"
+                            print(f"  Found: {env} delay={delay} seed={seed}: {value:.2f} {status}")
     
     # Method 2: Parse tensorboard logs from logs/VDPO/ (SLOW - only for missing results)
     # Only use tensorboard if output logs are missing
@@ -111,47 +121,71 @@ def extract_results_from_logs():
                                 results[(env, delay, seed)] = value
                                 print(f"  Found: {env} delay={delay} seed={seed}: {value:.2f}")
     
-    return results, METHOD, ENVS, DELAYS
+    return results, METHOD, ENVS, DELAYS, SEEDS
 
-def generate_table(results, method, envs, delays):
+def generate_table(results, method, envs, delays, seeds, use_only_completed=True):
     """Generate the results table."""
-    seeds = [0, 1, 2]
     
     # Calculate statistics for each (env, delay) combination
-    stats = {}  # stats[(env, delay)] = {'mean': x, 'std': y, 'values': [...]}
+    stats = {}  # stats[(env, delay)] = {'mean': x, 'std': y, 'values': [...], 'completed_count': n}
     
     for env in envs:
         for delay in delays:
             values = []
+            completed_values = []
             for seed in seeds:
                 key = (env, delay, seed)
                 if key in results:
-                    values.append(results[key])
+                    result = results[key]
+                    if isinstance(result, dict):
+                        value = result['value']
+                        completed = result.get('completed', False)
+                        values.append(value)
+                        if completed:
+                            completed_values.append(value)
+                    else:
+                        # Backward compatibility
+                        values.append(result)
+                        completed_values.append(result)
             
-            if values:
-                stats[(env, delay)] = {
-                    'mean': np.mean(values),
-                    'std': np.std(values),
-                    'values': values
-                }
+            if use_only_completed:
+                # Only use completed runs for statistics
+                if completed_values and len(completed_values) >= 1:
+                    stats[(env, delay)] = {
+                        'mean': np.mean(completed_values),
+                        'std': np.std(completed_values),
+                        'values': completed_values,
+                        'completed_count': len(completed_values),
+                        'total_count': len(values)
+                    }
+            else:
+                # Use all available results
+                if values:
+                    stats[(env, delay)] = {
+                        'mean': np.mean(values),
+                        'std': np.std(values),
+                        'values': values,
+                        'completed_count': len(completed_values) if completed_values else 0,
+                        'total_count': len(values)
+                    }
     
     # Generate table - matching the format from the example
-    print("\n" + "="*80)
-    print("Results Table")
-    print("="*80)
-    print(f"{'Task':<20} {'Method':<25} {'Action Delay':<12}", end="")
-    for delay in delays:
-        print(f"{delay:>15}", end="")
-    print()
-    print(f"{'0 (=SAC)':<20} {'':<25} {'':<12}", end="")
+    # Header row
+    print("\n" + "="*100)
+    print(f"{'Task':<20} {'Method':<25} {'Action Delay':<15}", end="")
+    print(f"{'0 (=SAC)':>15}", end="")
     for delay in delays:
         print(f"{delay:>15}", end="")
     print()
     
+    # Data rows for each environment
     for env in envs:
-        env_short = env.replace("-v5", "")
+        env_short = re.sub(r"-v\d+$", "", env)  # strip Gymnasium version suffix (e.g. -v4, -v5)
         print(f"{env_short}")
-        print(f"{'':<20} {method:<25} {'':<12}", end="")
+        print(f"{'':<20} {method:<25} {'':<15}", end="")
+        
+        # Delay 0 (not available for VDPO, show —)
+        print("—".rjust(15), end="")
         
         for delay in delays:
             key = (env, delay)
@@ -165,7 +199,10 @@ def generate_table(results, method, envs, delays):
     
     # Task average row
     print(f"{'Task average'}")
-    print(f"{'':<20} {method:<25} {'':<12}", end="")
+    print(f"{'':<20} {method:<25} {'':<15}", end="")
+    
+    # Delay 0 (not available)
+    print("—".rjust(15), end="")
     
     for delay in delays:
         all_values = []
@@ -181,17 +218,129 @@ def generate_table(results, method, envs, delays):
         else:
             print("—".rjust(15), end="")
     print()
-    print("="*80)
+    print("="*100)
+    print("\nNote: Only completed runs (≥4.9M steps) are included in statistics. Incomplete runs are excluded.")
+    return stats
+
+def write_vdpo_results_txt(results, envs, delays, stats, seeds, output_path="results_table.txt"):
+    """Write a brief VDPO-only table to txt. Marks incomplete grids as (mean±std, n/N seeds)."""
+    W = 20  # width per number column
+    n_expect = len(seeds)
+    lines = []
+    lines.append("VDPO Results")
+    lines.append("")
+    hdr = f"{'Task':<18}"
+    for d in delays:
+        hdr += f" {'Delay ' + str(d):<{W}}"
+    lines.append(hdr)
+    lines.append("-" * (18 + len(delays) * (W + 1)))
+
+    for env in envs:
+        row = [env]
+        for delay in delays:
+            key = (env, delay)
+            if key in stats:
+                mean, std = stats[key]['mean'], stats[key]['std']
+                n = stats[key]['completed_count']
+                s = f"{mean:.0f}±{std:.0f}"
+                if n < n_expect:
+                    s = f"{s} ({n}/{n_expect} seeds)"
+                row.append(s)
+            else:
+                row.append("—")
+        line = f"{row[0]:<18}" + "".join(f" {row[i]:<{W}}" for i in range(1, len(row)))
+        lines.append(line)
+
+    lines.append("-" * (18 + len(delays) * (W + 1)))
+    row = ["Task average"]
+    for delay in delays:
+        all_vals = []
+        any_incomplete = False
+        for env in envs:
+            key = (env, delay)
+            if key in stats:
+                all_vals.extend(stats[key]['values'])
+                if stats[key]['completed_count'] < n_expect:
+                    any_incomplete = True
+        if all_vals:
+            s = f"{np.mean(all_vals):.0f}±{np.std(all_vals):.0f}"
+            if any_incomplete:
+                s = f"{s} (partial)"
+            row.append(s)
+        else:
+            row.append("—")
+    line = f"{row[0]:<18}" + "".join(f" {row[i]:<{W}}" for i in range(1, len(row)))
+    lines.append(line)
+
+    txt = "\n".join(lines) + "\n"
+    Path(output_path).write_text(txt, encoding="utf-8")
+    print(f"\nWrote: {output_path}")
+
+def write_vdpo_results_md(results, envs, delays, stats, seeds, output_path="results_table.md"):
+    """Write a Markdown table for easier reading."""
+    n_expect = len(seeds)
+    lines = []
+    lines.append("# VDPO Results")
+    lines.append("")
+
+    # Header
+    header = ["Task"] + [f"Delay {d}" for d in delays]
+    lines.append("| " + " | ".join(header) + " |")
+    lines.append("| " + " | ".join(["---"] * len(header)) + " |")
+
+    # Rows per environment
+    for env in envs:
+        row = [env]
+        for delay in delays:
+            key = (env, delay)
+            if key in stats:
+                mean, std = stats[key]['mean'], stats[key]['std']
+                n = stats[key]['completed_count']
+                s = f"{mean:.0f}$\\pm${std:.0f}"
+                if n < n_expect:
+                    s = f"{s} ({n}/{n_expect} seeds)"
+                row.append(s)
+            else:
+                row.append("—")
+        lines.append("| " + " | ".join(row) + " |")
+
+    # Task average row
+    avg_row = ["Task average"]
+    for delay in delays:
+        all_vals = []
+        any_incomplete = False
+        for env in envs:
+            key = (env, delay)
+            if key in stats:
+                all_vals.extend(stats[key]['values'])
+                if stats[key]['completed_count'] < n_expect:
+                    any_incomplete = True
+        if all_vals:
+            s = f"{np.mean(all_vals):.0f}$\\pm${np.std(all_vals):.0f}"
+            if any_incomplete:
+                s = f"{s} (partial)"
+            avg_row.append(s)
+        else:
+            avg_row.append("—")
+    lines.append("| " + " | ".join(avg_row) + " |")
+    lines.append("")
+    lines.append(f"- Expected runs per cell: {n_expect} seeds")
+    lines.append("- Stats include completed runs only (>= 4.9M steps in current script).")
+
+    Path(output_path).write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Wrote: {output_path}")
 
 def main():
     print("Extracting results from logs...\n")
     
-    results, method, envs, delays = extract_results_from_logs()
+    results, method, envs, delays, seeds = extract_results_from_logs()
     
     print(f"\nTotal results found: {len(results)}")
-    print(f"Expected: {len(envs) * len(delays) * 3} (environments × delays × seeds)")
+    print(f"Expected: {len(envs) * len(delays) * len(seeds)} (environments × delays × seeds)")
     
-    generate_table(results, method, envs, delays)
+    stats = generate_table(results, method, envs, delays, seeds)
+    write_vdpo_results_txt(results, envs, delays, stats, seeds)
+    write_vdpo_results_md(results, envs, delays, stats, seeds)
 
 if __name__ == "__main__":
     main()
