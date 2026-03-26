@@ -4,9 +4,9 @@
 #   - delay0_sac: delay-free SAC reference policy (Ret_df)
 #   - random: random policy baseline (Ret_rand)
 #
-# Loop order: method -> seed -> env
-#   - method: delay0_sac, random (2 values) - outermost loop
-#   - seed: 0, 1, 2 (3 values)
+# Loop order: seed -> method -> env
+#   - seed: 0, 1, 2 (3 values) - outermost loop
+#   - method: delay0_sac, random (2 values)
 #   - env: HalfCheetah-v4, Hopper-v4, Ant-v4, Walker2d-v4 (4 values) - innermost loop
 # Total combinations: 2 * 3 * 4 = 24
 
@@ -26,15 +26,15 @@ CONDA_ENV="VDPO"
 METHODS=("delay0_sac" "random")
 SEEDS=(0 1 2)
 ENVS=("HalfCheetah-v4" "Hopper-v4" "Ant-v4" "Walker2d-v4")
-TOTAL_TIMESTEPS=1000000
+TOTAL_TIMESTEPS=${BASELINE_TOTAL_TIMESTEPS:-1000000}
 
 TASK_ID=$SLURM_ARRAY_TASK_ID
 NUM_METHODS=${#METHODS[@]}
 NUM_SEEDS=${#SEEDS[@]}
 NUM_ENVS=${#ENVS[@]}
 
-METHOD_IDX=$((TASK_ID / (NUM_SEEDS * NUM_ENVS)))
-SEED_IDX=$(((TASK_ID % (NUM_SEEDS * NUM_ENVS)) / NUM_ENVS))
+SEED_IDX=$((TASK_ID / (NUM_METHODS * NUM_ENVS)))
+METHOD_IDX=$(((TASK_ID % (NUM_METHODS * NUM_ENVS)) / NUM_ENVS))
 ENV_IDX=$((TASK_ID % NUM_ENVS))
 
 METHOD=${METHODS[$METHOD_IDX]}
