@@ -3,12 +3,12 @@
 # Parameters (loop order: seed -> env -> delay):
 #   - seed: 0, 1, 2 (3 values) - outermost loop
 #   - env: HalfCheetah-v4, Hopper-v4, Ant-v4, Walker2d-v4 (4 values)
-#   - delay: 5, 25, 50 (3 values) - innermost loop
+#   - delay: 4, 8, 16 (3 values) - innermost loop
 # Total combinations: 3 * 4 * 3 = 36
-# At most 3 array tasks run concurrently (%3)
+# At most 18 array tasks run concurrently (%18)
 
 #SBATCH --job-name=g1-pickup-grid-search
-#SBATCH --array=0-35%12
+#SBATCH --array=0-35%18
 #SBATCH --gres=gpu:1
 #SBATCH --exclude=al-l40s-0.grasp.maas
 #SBATCH --cpus-per-task=16
@@ -23,7 +23,7 @@ export PYTHONUNBUFFERED=1
 ### VARIABLES
 CONDA_ENV="VDPO"
 ENVS=("HalfCheetah-v4" "Hopper-v4" "Ant-v4" "Walker2d-v4")
-DELAYS=(5 25 50)
+DELAYS=(4 8 16)
 SEEDS=(0 1 2)
 TOTAL_TIMESTEPS=1000000
 
