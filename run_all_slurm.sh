@@ -7,7 +7,7 @@
 # Total combinations: 10 * 4 * 3 = 120
 # At most 5 array tasks run concurrently (%5)
 
-#SBATCH --job-name=g1-pickup-grid-search
+#SBATCH --job-name=g1PickupVD
 #SBATCH --array=0-119%5
 #SBATCH --gres=gpu:1
 #SBATCH --exclude=al-l40s-0.grasp.maas
