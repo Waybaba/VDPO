@@ -5,10 +5,10 @@
 #   - env: HalfCheetah-v5, Hopper-v5, Ant-v5, Walker2d-v5 (4 values)
 #   - delay: 4, 8, 16 (3 values) - innermost loop
 # Total combinations: 10 * 4 * 3 = 120
-# At most 5 array tasks run concurrently (%5)
+# At most 12 array tasks run concurrently (%12)
 
 #SBATCH --job-name=g1PickupVD
-#SBATCH --array=0-119%5
+#SBATCH --array=0-119%12
 #SBATCH --gres=gpu:1
 #SBATCH --exclude=al-l40s-0.grasp.maas
 #SBATCH --cpus-per-task=16
